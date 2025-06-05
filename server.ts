@@ -5,6 +5,7 @@ import { createServer } from "node:http";
 import cookieParser from "cookie-parser";
 import errorHandler from "./middleware/errorHandler.js";
 import { authRoutes } from "./routes/auth.route.js";
+import dotenv from "dotenv";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -14,6 +15,7 @@ const nextApp = next({ dev, hostname, port });
 const nextHandler = nextApp.getRequestHandler();
 
 nextApp.prepare().then(() => {
+  dotenv.config();
   const app = express();
   app.use(cors({ origin: process.env.AP_ORIGIN, credentials: true }));
   app.use(express.urlencoded({ extended: true }));
