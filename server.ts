@@ -18,9 +18,9 @@ nextApp.prepare().then(() => {
   dotenv.config();
   const app = express();
   app.use(cors({ origin: process.env.AP_ORIGIN, credentials: true }));
+  app.use(cookieParser());
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
-  app.use(cookieParser());
 
   app.use((req, res, next) => {
     console.log(`Request: ${req.method} ${req.url}`);
