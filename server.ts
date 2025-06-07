@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
-const port = 3000;
+const port = 3001;
 
 const nextApp = next({ dev, hostname, port });
 const nextHandler = nextApp.getRequestHandler();

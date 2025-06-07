@@ -4,11 +4,12 @@ import { setAuthCookies, clearOutCookies } from "@/utils/cookies.js";
 import { registerSchema } from "./auth.registerSchema.js";
 import { loginSchema } from "./auth.loginSchema.js";
 import { loginUser } from "@/services/auth.service";
-import { CREATED, OK } from "@/utils/httpStatusCode.js";
+import { CREATED, OK, UNAUTHORIZED } from "@/utils/httpStatusCode.js";
 import { verifyToken } from "@/services/auth.JWTtoke.js";
 import db from "@/lib/db.js";
 import { eq } from "drizzle-orm";
 import { SessionDocument } from "@/schema/schema.js";
+import appAssert from "@/utils/appAssert.js";
 
 export const registerHandler = catchError(async (req, res) => {
   const request = registerSchema.parse({
@@ -37,8 +38,8 @@ export const loginHandler = catchError(async (req, res) => {
 });
 
 export const logoutHandler = catchError(async (req, res) => {
-  const accessToken = req.cookies.accessToken;
-  const { payload } = verifyToken(accessToken);
+  const accessToken = req.cookies.accessToken as string | undefined;
+  const { payload } = verifyToken(accessToken || "");
 
   console.log(req.cookies);
 
@@ -51,4 +52,10 @@ export const logoutHandler = catchError(async (req, res) => {
   return clearOutCookies(res)
     .status(OK)
     .json({ message: "Logout successFull" });
+});
+
+export const refresHandler = catchError(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken as string | undefined;
+
+  appAssert(refreshToken, UNAUTHORIZED, "Missing refresh token");
 });
