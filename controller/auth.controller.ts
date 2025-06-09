@@ -1,6 +1,10 @@
 import catchError from "../utils/catchError.js";
 import { createAccount } from "@/services/auth.service";
-import { setAuthCookies, clearOutCookies } from "@/utils/cookies.js";
+import {
+  setAuthCookies,
+  clearOutCookies,
+  getRefreshTokenCookieOptions,
+} from "@/utils/cookies.js";
 import { registerSchema } from "./auth.registerSchema.js";
 import { loginSchema } from "./auth.loginSchema.js";
 import { loginUser } from "@/services/auth.service";
@@ -10,6 +14,10 @@ import db from "@/lib/db.js";
 import { eq } from "drizzle-orm";
 import { SessionDocument } from "@/schema/schema.js";
 import appAssert from "@/utils/appAssert.js";
+import { refreshUserAccessToken } from "@/services/auth.service";
+import { getAccessTokenCookieOptions } from "@/utils/cookies.js";
+import { verificationCodeSchema } from "./auth.verifyEmailCodeSchema.js";
+import { verifyEmailServices } from "@/services/auth.service";
 
 export const registerHandler = catchError(async (req, res) => {
   const request = registerSchema.parse({
@@ -38,10 +46,8 @@ export const loginHandler = catchError(async (req, res) => {
 });
 
 export const logoutHandler = catchError(async (req, res) => {
-  const accessToken = req.cookies.accessToken as string | undefined;
+  const accessToken = req.cookies.accessToken;
   const { payload } = verifyToken(accessToken || "");
-
-  console.log(req.cookies);
 
   if (payload) {
     await db
@@ -54,8 +60,31 @@ export const logoutHandler = catchError(async (req, res) => {
     .json({ message: "Logout successFull" });
 });
 
-export const refresHandler = catchError(async (req, res) => {
-  const refreshToken = req.cookies.refreshToken as string | undefined;
+export const refreshHandler = catchError(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  console.log(refreshToken);
 
   appAssert(refreshToken, UNAUTHORIZED, "Missing refresh token");
+
+  const { accessToken, newRefreshToken } =
+    await refreshUserAccessToken(refreshToken);
+
+  if (newRefreshToken) {
+    res.cookie("refreshToken", newRefreshToken, getRefreshTokenCookieOptions());
+  }
+  return res
+    .status(OK)
+    .cookie("accessToken", accessToken, getAccessTokenCookieOptions())
+    .json({ message: "Access token refreshed" });
+});
+
+export const verifyEmailHandler = catchError(async (req, res) => {
+  //verify email code
+  console.log(req.params.code);
+
+  const verificationCode = verificationCodeSchema.parse(req.params.code);
+
+  await verifyEmailServices(verificationCode);
+
+  return res.status(OK).json({ message: "Email has been verified!" });
 });

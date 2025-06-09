@@ -3,16 +3,24 @@ import { VerificationCode } from "@/schema/schema.js";
 import { SessionDocument } from "@/schema/schema.js";
 import VerificationCodeType from "@/helper/verificationCode";
 import db from "@/lib/db";
-import { eq } from "drizzle-orm";
+import { eq, gt, and } from "drizzle-orm";
 import { thirtyDaysFromNow, oneYearFromNow } from "@/utils/date";
 import appAssert from "@/utils/appAssert";
-import { CONFLICT, UNAUTHORIZED } from "@/utils/httpStatusCode";
+import {
+  CONFLICT,
+  INTERNAL_SERVER_ERROR,
+  NOT_FOUND,
+  UNAUTHORIZED,
+} from "@/utils/httpStatusCode";
 import {
   refreshTokenPayload,
   refreshTokenSignOptions,
   signToken,
 } from "./auth.JWTtoke";
 import { ONE_DAY_MS } from "@/utils/date";
+import { verifyToken } from "./auth.JWTtoke";
+import { sendMail } from "@/utils/sendMail";
+import { verifyEmailTemplate } from "@/utils/emailTemplate";
 
 export type createAccountParams = {
   email: string;
@@ -41,16 +49,27 @@ export const createAccount = async (data: createAccountParams) => {
     .values({
       email: data.email,
       password: data.password,
+      verified: false,
     })
     .returning();
 
   //create verifications code
-  await db.insert(VerificationCode).values({
-    userId: user[0].id as string,
-    type: VerificationCodeType.EmailVerification,
-    expires_at: oneYearFromNow(),
-  });
+  const verificationCode = await db
+    .insert(VerificationCode)
+    .values({
+      userId: user[0].id as string,
+      type: VerificationCodeType.EmailVerification,
+      expires_at: oneYearFromNow(),
+    })
+    .returning();
+
+  const url = `http://localhost:3000/email/verify/${verificationCode[0].id}`;
   //send verification email
+  await sendMail({
+    to: user[0].email,
+    ...verifyEmailTemplate(url, user[0].email),
+  });
+
   //create session
   const session = await db
     .insert(SessionDocument)
@@ -102,7 +121,7 @@ export const loginUser = async (data: loginAccountParams) => {
     .from(AuthUsers)
     .where(eq(AuthUsers.email, data.email));
 
-  appAssert(existingUser, UNAUTHORIZED, "Invalid email or password");
+  appAssert(existingUser[0], UNAUTHORIZED, "Invalid email or password");
   //validate password
 
   const isValid = data.password === existingUser[0].password;
@@ -153,7 +172,7 @@ export const refreshUserAccessToken = async (refreshToken: string) => {
   const now = new Date(Date.now());
 
   appAssert(
-    session && session[0].expires_at > now,
+    session[0] && session[0].expires_at > now,
     UNAUTHORIZED,
     "Session expired"
   );
@@ -179,4 +198,53 @@ export const refreshUserAccessToken = async (refreshToken: string) => {
     userId: session[0].userId,
     sessionId: session[0].id,
   });
+
+  return { accessToken, newRefreshToken };
+};
+
+export const verifyEmailServices = async (code: string) => {
+  //get code
+
+  const validationCode = await db
+    .select()
+    .from(VerificationCode)
+    .where(
+      and(
+        eq(VerificationCode.id, code),
+        gt(VerificationCode.expires_at, new Date(Date.now()))
+      )
+    );
+
+  appAssert(
+    validationCode[0],
+    NOT_FOUND,
+    "Invalid or expired verification code"
+  );
+  //get user by Identifier
+  const verifyUser = await db
+    .select()
+    .from(AuthUsers)
+    .where(eq(AuthUsers.id, validationCode[0].userId));
+
+  appAssert(verifyUser[0], NOT_FOUND, "User does not exist!");
+  //update the user to verification true
+
+  const updatedUser = await db
+    .update(AuthUsers)
+    .set({ verified: true })
+    .where(eq(AuthUsers.id, verifyUser[0].id))
+    .returning();
+
+  appAssert(updatedUser[0], INTERNAL_SERVER_ERROR, "Failed to verify email");
+  //delete verification code
+  await db.delete(VerificationCode).where(eq(VerificationCode.id, code));
+  //return users
+
+  const newUser = {
+    email: updatedUser[0].email,
+    id: updatedUser[0].id,
+    created_at: updatedUser[0].created_at,
+  };
+
+  return { newUser };
 };

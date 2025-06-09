@@ -12,5 +12,3 @@ class AppError extends Error {
 }
 
 export default AppError;
-
-new AppError(200, "msg", AppErrorCode.InvalidAccessToken);

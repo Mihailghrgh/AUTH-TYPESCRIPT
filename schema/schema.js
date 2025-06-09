@@ -18,6 +18,7 @@ export const AuthUsers = pgTable("AuthUsers", {
   created_at: timestamp("created_at").defaultNow().notNull(),
   email: text("email").notNull(),
   password: text("password").notNull(),
+  verified: boolean("verified").notNull().default(false),
 });
 
 export const VerificationCode = pgTable("VerificationCode", {

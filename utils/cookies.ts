@@ -15,12 +15,16 @@ type Params = {
   refreshToken: string;
 };
 
-const getAccessTokenCookieOptions = (): CookieOptions => ({
+export const clearCookiesOptions = (): CookieOptions => ({
+  ...defaultToken,
+});
+
+export const getAccessTokenCookieOptions = (): CookieOptions => ({
   ...defaultToken,
   expires: fifteenMinutesFromNow(),
 });
 
-const getRefreshTokenCookieOptions = (): CookieOptions => ({
+export const getRefreshTokenCookieOptions = (): CookieOptions => ({
   ...defaultToken,
   expires: thirtyDaysFromNow(),
   path: refreshPATH,
@@ -35,5 +39,5 @@ export const setAuthCookies = ({ res, accessToken, refreshToken }: Params) => {
 export const clearOutCookies = (res: Response) => {
   return res
     .clearCookie("accessToken")
-    .clearCookie("refreshToken", { path: "/auth/refresh" });
+    .clearCookie("refreshToken", { path: refreshPATH });
 };
