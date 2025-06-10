@@ -21,18 +21,20 @@ const handleAppError = (res: Response, error: AppError) => {
 const errorHandler: ErrorRequestHandler = (error, req, res, next) => {
   console.log(`PATH ${req.path}`, error);
 
-  if(req.path === "/auth/refresh"){
-    clearOutCookies(res)
+  if (req.path === "/auth/refresh") {
+    clearOutCookies(res);
   }
-  
+
   if (error instanceof z.ZodError) {
-    return handleZodError(res, error);
+    handleZodError(res, error);
+    return;
   }
 
   if (error instanceof AppError) {
-    return handleAppError(res, error);
+    handleAppError(res, error);
+    return;
   }
-  return res
+  res
     .status(error.status || 500)
     .send(error.message || "Internal Server Error");
 };

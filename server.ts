@@ -6,6 +6,9 @@ import cookieParser from "cookie-parser";
 import errorHandler from "./middleware/errorHandler.js";
 import { authRoutes } from "./routes/auth.route.js";
 import dotenv from "dotenv";
+import authenticate from "./middleware/authenticate.js";
+import { userRoutes } from "./routes/user.route.js";
+import { sessionRoutes } from "./routes/session.route.js";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -32,6 +35,12 @@ nextApp.prepare().then(() => {
   });
 
   app.use("/auth", authRoutes);
+
+  //protected user routes
+  app.use("/user", authenticate, userRoutes);
+
+  //sessions routes
+  app.use("/sessions", authenticate, sessionRoutes);
 
   app.use((req, res) => {
     return nextHandler(req, res);

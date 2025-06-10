@@ -102,7 +102,7 @@ export const forgotPasswordHandler = catchError(async (req, res) => {
 export const resetPasswordHandler = catchError(async (req, res) => {
   const request = resetPasswordSchema.parse(req.body);
 
-  const { newUser } = await resetPassword(request);
+  await resetPassword(request);
 
   return clearOutCookies(res)
     .status(OK)
