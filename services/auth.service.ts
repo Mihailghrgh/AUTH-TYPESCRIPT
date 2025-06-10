@@ -4,12 +4,17 @@ import { SessionDocument } from "@/schema/schema.js";
 import VerificationCodeType from "@/helper/verificationCode";
 import db from "@/lib/db";
 import { eq, gt, and } from "drizzle-orm";
-import { thirtyDaysFromNow, oneYearFromNow } from "@/utils/date";
+import {
+  thirtyDaysFromNow,
+  oneYearFromNow,
+  fiveMinutesFromNow,
+} from "@/utils/date";
 import appAssert from "@/utils/appAssert";
 import {
   CONFLICT,
   INTERNAL_SERVER_ERROR,
   NOT_FOUND,
+  TOO_MANY_REQUESTS,
   UNAUTHORIZED,
 } from "@/utils/httpStatusCode";
 import {
@@ -21,6 +26,7 @@ import { ONE_DAY_MS } from "@/utils/date";
 import { verifyToken } from "./auth.JWTtoke";
 import { sendMail } from "@/utils/sendMail";
 import { verifyEmailTemplate } from "@/utils/emailTemplate";
+import { resetPasswordEmailTemplate } from "@/utils/emailTemplate";
 
 export type createAccountParams = {
   email: string;
@@ -244,6 +250,107 @@ export const verifyEmailServices = async (code: string) => {
     email: updatedUser[0].email,
     id: updatedUser[0].id,
     created_at: updatedUser[0].created_at,
+  };
+
+  return { newUser };
+};
+
+export const sendPasswordResetEmail = async (email: string) => {
+  //get the user by email
+
+  const user = await db
+    .select()
+    .from(AuthUsers)
+    .where(eq(AuthUsers.email, email));
+  //check if user exists
+  appAssert(user[0], NOT_FOUND, "User email does not exist");
+  //check email rate limit
+  const date = new Date(Date.now());
+  const count = await db
+    .select()
+    .from(VerificationCode)
+    .where(
+      and(
+        eq(VerificationCode.type, VerificationCodeType.PasswordReset),
+        eq(VerificationCode.userId, user[0].id),
+        gt(VerificationCode.expires_at, date)
+      )
+    );
+
+  console.log(count.length);
+
+  appAssert(
+    count.length <= 1,
+    TOO_MANY_REQUESTS,
+    "Too many requests, please try again later"
+  );
+  //create verification code
+
+  const passwordResetCode = await db
+    .insert(VerificationCode)
+    .values({
+      userId: user[0].id,
+      type: VerificationCodeType.PasswordReset,
+      expires_at: fiveMinutesFromNow(),
+    })
+    .returning();
+  //send verification email
+  const url = `${process.env.AP_ORIGIN}/password/reset?code=${passwordResetCode[0].id}&exp=${passwordResetCode[0].expires_at}`;
+
+  const { data, error } = await sendMail({
+    to: user[0].email,
+    ...resetPasswordEmailTemplate(url, user[0].email),
+  });
+  appAssert(data?.id, INTERNAL_SERVER_ERROR, `${error}`);
+
+  //return success
+
+  return { url, emailId: data.id };
+};
+
+type ResetPasswordParams = {
+  password: string;
+  verificationCode: string;
+};
+export const resetPassword = async ({
+  password,
+  verificationCode,
+}: ResetPasswordParams) => {
+  const date = new Date(Date.now());
+  //get the verification code
+  const validCode = await db
+    .select()
+    .from(VerificationCode)
+    .where(
+      and(
+        eq(VerificationCode.id, verificationCode),
+        eq(VerificationCode.type, VerificationCodeType.PasswordReset),
+        gt(VerificationCode.expires_at, date)
+      )
+    );
+  //if valid update the user password
+  appAssert(validCode[0], NOT_FOUND, "Invalid or expired verification code");
+
+  const updatedUser = await db
+    .update(AuthUsers)
+    .set({ password: password })
+    .where(eq(AuthUsers.id, validCode[0].userId))
+    .returning();
+  //delete the verification code
+
+  console.log("Updated user details", updatedUser[0]);
+
+  await db
+    .delete(VerificationCode)
+    .where(eq(VerificationCode.id, verificationCode));
+  //delete ALL sessions
+
+  await db
+    .delete(SessionDocument)
+    .where(eq(SessionDocument.userId, updatedUser[0].id));
+
+  const newUser = {
+    email: updatedUser[0].email,
   };
 
   return { newUser };

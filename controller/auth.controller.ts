@@ -1,5 +1,9 @@
 import catchError from "../utils/catchError.js";
-import { createAccount } from "@/services/auth.service";
+import {
+  createAccount,
+  resetPassword,
+  sendPasswordResetEmail,
+} from "@/services/auth.service";
 import {
   setAuthCookies,
   clearOutCookies,
@@ -18,6 +22,8 @@ import { refreshUserAccessToken } from "@/services/auth.service";
 import { getAccessTokenCookieOptions } from "@/utils/cookies.js";
 import { verificationCodeSchema } from "./auth.verifyEmailCodeSchema.js";
 import { verifyEmailServices } from "@/services/auth.service";
+import { emailSchema } from "./auth.verifyEmailSchema.js";
+import { resetPasswordSchema } from "./auth.resetPasswordSchema.js";
 
 export const registerHandler = catchError(async (req, res) => {
   const request = registerSchema.parse({
@@ -62,7 +68,6 @@ export const logoutHandler = catchError(async (req, res) => {
 
 export const refreshHandler = catchError(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-  console.log(refreshToken);
 
   appAssert(refreshToken, UNAUTHORIZED, "Missing refresh token");
 
@@ -80,11 +85,26 @@ export const refreshHandler = catchError(async (req, res) => {
 
 export const verifyEmailHandler = catchError(async (req, res) => {
   //verify email code
-  console.log(req.params.code);
-
   const verificationCode = verificationCodeSchema.parse(req.params.code);
 
   await verifyEmailServices(verificationCode);
 
   return res.status(OK).json({ message: "Email has been verified!" });
+});
+
+export const forgotPasswordHandler = catchError(async (req, res) => {
+  const email = emailSchema.parse(req.body.email);
+  await sendPasswordResetEmail(email);
+
+  return res.status(OK).json({ message: "Password reset email sent" });
+});
+
+export const resetPasswordHandler = catchError(async (req, res) => {
+  const request = resetPasswordSchema.parse(req.body);
+
+  const { newUser } = await resetPassword(request);
+
+  return clearOutCookies(res)
+    .status(OK)
+    .json({ message: "Password has been reset" });
 });
