@@ -29,11 +29,16 @@ import { verifyEmailTemplate } from "@/utils/emailTemplate";
 import { resetPasswordEmailTemplate } from "@/utils/emailTemplate";
 
 export type createAccountParams = {
+  name: string;
   email: string;
   password: string;
   userAgent?: string;
 };
-export type loginAccountParams = createAccountParams;
+export type loginAccountParams = {
+  email: string;
+  password: string;
+  userAgent?: string;
+};
 
 export const createAccount = async (data: createAccountParams) => {
   //verify existing user
@@ -53,6 +58,7 @@ export const createAccount = async (data: createAccountParams) => {
   const user = await db
     .insert(AuthUsers)
     .values({
+      name: data.name,
       email: data.email,
       password: data.password,
       verified: false,

@@ -8,3 +8,13 @@ declare global {
 }
 
 export {};
+
+declare global {
+  namespace axios {
+    interface AxiosResponse {
+      responseStatus: number;
+    }
+  }
+}
+
+export {}

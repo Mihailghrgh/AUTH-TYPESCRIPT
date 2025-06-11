@@ -13,6 +13,7 @@ export const verificationCodeTypeEnum = pgEnum("VerificationCodeType", [
 ]);
 
 export const AuthUsers = pgTable("AuthUsers", {
+  name: text("name").notNull(),
   id: uuid("id").defaultRandom().notNull(),
   created_at: timestamp("created_at").defaultNow().notNull(),
   email: text("email").notNull(),
