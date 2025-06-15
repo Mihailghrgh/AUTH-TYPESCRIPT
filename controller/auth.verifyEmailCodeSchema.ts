@@ -1,3 +1,3 @@
 import z from "zod";
 
-export const verificationCodeSchema = z.string().min(1).max(36);
+export const verificationCodeSchema = z.string().min(36).max(36);

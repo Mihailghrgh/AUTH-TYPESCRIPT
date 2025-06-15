@@ -1,5 +1,5 @@
 "use client";
-import { user } from "@/lib/api";
+import {  userSessions } from "@/lib/api";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-// Mock data for sessions and logins
+import { cookies } from "next/headers";
+import { useQuery } from "@tanstack/react-query";
+import { UserStore } from "@/store/UserStore";
+
 const mockSessions = [
   {
     id: 1,
@@ -54,14 +57,13 @@ const mockPreviousLogins = [
 type DetailType = "sessions" | "logins" | null;
 
 export default function UserPage() {
+  const { user, setUser } = UserStore();
+  console.log(user);
+  
   const [activeDetail, setActiveDetail] = useState<DetailType>(null);
   const router = useRouter();
 
   // Mock user data - in a real app, this would come from your auth system
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-  };
 
   const handleLogout = () => {
     // In a real app, you would handle logout logic here
@@ -70,16 +72,25 @@ export default function UserPage() {
 
   const getUserData = async () => {
     try {
-    } catch (error) {}
+      const response = await userSessions();
+    } catch (error) {
+      console.log(error);
+    }
   };
+
+  const { data, error } = useQuery({
+    queryKey: ["user"],
+    staleTime: Infinity,
+    queryFn: getUserData,
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="container mx-auto max-w-6xl">
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle className="text-2xl">Welcome, {user.name}</CardTitle>
-            <CardDescription>{user.email}</CardDescription>
+            <CardTitle className="text-2xl">Welcome, {user?.email}</CardTitle>
+            <CardDescription>{user?.email}</CardDescription>
           </CardHeader>
         </Card>
 

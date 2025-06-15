@@ -301,7 +301,9 @@ export const sendPasswordResetEmail = async (email: string) => {
     })
     .returning();
   //send verification email
-  const url = `${process.env.AP_ORIGIN}/password/reset?code=${passwordResetCode[0].id}&exp=${passwordResetCode[0].expires_at}`;
+
+  const timeStamp = Math.floor(fiveMinutesFromNow().getTime());
+  const url = `${process.env.AP_ORIGIN}auth/password/reset?code=${passwordResetCode[0].id}&exp=${timeStamp}`;
 
   const { data, error } = await sendMail({
     to: user[0].email,
@@ -360,4 +362,18 @@ export const resetPassword = async ({
   };
 
   return { newUser };
+};
+
+export const checkPasswordCode = async (code: string) => {
+  const availableCode = await db
+    .select()
+    .from(VerificationCode)
+    .where(
+      and(
+        eq(VerificationCode.id, code),
+        gt(VerificationCode.expires_at, new Date(Date.now()))
+      )
+    );
+  appAssert(availableCode[0], NOT_FOUND, "Code unavailable or expired");
+  return { availableCode };
 };

@@ -45,7 +45,7 @@ nextApp.prepare().then(() => {
   app.use((req, res) => {
     return nextHandler(req, res);
   });
-
+  
   app.use(errorHandler);
 
   const httpServer = createServer(app);

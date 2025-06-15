@@ -18,6 +18,7 @@ import Link from "next/link";
 import { login } from "../../lib/api";
 import { useRouter } from "next/navigation";
 import { OK } from "@/utils/httpStatusCode";
+import { UserStore } from "@/store/UserStore";
 
 export const loginFormSchema = z.object({
   email: z
@@ -32,6 +33,7 @@ export const loginFormSchema = z.object({
 });
 
 export function ProfileForm() {
+  const { user, setUser } = UserStore();
   // 1. Define your form.
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
@@ -50,17 +52,16 @@ export function ProfileForm() {
         password: values.password,
         confirmPassword: values.password,
       };
-
       const response = await login(data);
-
-      console.log(response.status);
-
-      const statusCode = Number(response.status);
-      console.log(statusCode);
+      const newUser = {
+        email: response.data.newUser.email,
+        created_at: response.data.newUser.created_at,
+        id: response.data.newUser.id,
+      };
 
       if (response.status === OK) {
-
-        route.push("/");
+        setUser(newUser)
+        route.push("/auth/user");
       }
     } catch (error) {
       console.log(error);

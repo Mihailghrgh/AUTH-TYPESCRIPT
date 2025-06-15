@@ -26,7 +26,6 @@ export default function Login() {
             Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
-
         <CardContent className="space-y-4">
           <ProfileForm />
         </CardContent>

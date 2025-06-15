@@ -15,9 +15,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { login, register } from "../../lib/api";
-import { useRouter } from "next/navigation";
-import { CREATED } from "@/utils/httpStatusCode";
+import { register } from "../../lib/api";
+import { useState } from "react";
+import RegistrationConfirmation from "./registerFormSuccess";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export const registerFormSchema = z
   .object({
@@ -45,6 +53,7 @@ export const registerFormSchema = z
   });
 
 export function RegisterForm() {
+  const [activePage, setActivePage] = useState(true);
   // 1. Define your form.
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
@@ -56,10 +65,7 @@ export function RegisterForm() {
     },
   });
 
-  const route = useRouter();
-
   async function onSubmit(values: z.infer<typeof registerFormSchema>) {
-    console.log(values);
 
     try {
       const data = {
@@ -72,93 +78,118 @@ export function RegisterForm() {
       const response = await register(data);
 
       if (response.status === 201) {
-        console.log("passed");
-        route.push("/");
+        setActivePage(false);
       }
     } catch (error) {
       console.log(error);
     }
   }
 
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <>
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="jane_doe@gmail.com" {...field} />
-                </FormControl>
-                <FormDescription>This is a test message.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            </>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <>
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="jane_doe@gmail.com" {...field} />
-                </FormControl>
-                <FormDescription>This is a test message.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            </>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input placeholder="*********" type="password" {...field} />
-              </FormControl>
-              <FormDescription>This is a test message.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
-              <FormControl>
-                <Input placeholder="*********" type="password" {...field} />
-              </FormControl>
-              <FormDescription>This is a test message.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex flex-col justify-center items-center">
-          <Button type="submit" className="w-full">
-            Submit
-          </Button>
-          <h1 className="text-sm mt-4">
-            {" "}
-            Already have an account?{" "}
-            <Link
-              href="/auth/register"
-              className="text-blue-600 hover:text-blue-800"
-            >
-              login!
-            </Link>
-          </h1>
-        </div>
-      </form>
-    </Form>
+  return activePage ? (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">
+            Sign Up
+          </CardTitle>
+          <CardDescription className="text-center">
+            Create your account to get started
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <>
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Jane doe" {...field} />
+                      </FormControl>
+                      <FormDescription>This is a test message.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  </>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <>
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="jane_doe@gmail.com" {...field} />
+                      </FormControl>
+                      <FormDescription>This is a test message.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  </>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="*********"
+                        type="password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>This is a test message.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="*********"
+                        type="password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>This is a test message.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex flex-col justify-center items-center">
+                <Button type="submit" className="w-full">
+                  Submit
+                </Button>
+                <h1 className="text-sm mt-4">
+                  {" "}
+                  Already have an account?{" "}
+                  <Link
+                    href="/auth/login"
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    login!
+                  </Link>
+                </h1>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
+  ) : (
+    <>
+      <RegistrationConfirmation />
+    </>
   );
 }

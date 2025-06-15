@@ -8,6 +8,8 @@ import {
 } from "../controller/auth.controller";
 import { logoutHandler } from "../controller/auth.controller";
 import { verifyEmailHandler } from "../controller/auth.controller";
+import { NextApiHandler } from "next";
+import { checkPasswordCodeHandler } from "../controller/auth.controller";
 
 export const authRoutes = Router();
 
@@ -18,3 +20,5 @@ authRoutes.get("/refresh", refreshHandler);
 authRoutes.get("/email/verify/:code", verifyEmailHandler);
 authRoutes.post("/password/forgot", forgotPasswordHandler);
 authRoutes.post("/password/reset", resetPasswordHandler);
+authRoutes.get("/password/check", checkPasswordCodeHandler);
+
