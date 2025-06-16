@@ -20,7 +20,13 @@ const nextHandler = nextApp.getRequestHandler();
 nextApp.prepare().then(() => {
   dotenv.config();
   const app = express();
-  app.use(cors({ origin: process.env.AP_ORIGIN, credentials: true }));
+  app.use(
+    cors({
+      origin: process.env.AP_ORIGIN,
+      credentials: true,
+      methods: ["GET", "POST"],
+    })
+  );
   app.use(cookieParser());
   app.use(express.urlencoded({ extended: true }));
   app.use(express.json());
@@ -45,7 +51,7 @@ nextApp.prepare().then(() => {
   app.use((req, res) => {
     return nextHandler(req, res);
   });
-  
+
   app.use(errorHandler);
 
   const httpServer = createServer(app);
