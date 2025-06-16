@@ -31,7 +31,7 @@ export default function LandingPage() {
               the fundamentals of user management.
             </p>
             <Button size="lg">
-              <Link href="/auth/login">Get Started</Link>
+              <Link href="/auth/user">Get Started</Link>
             </Button>
           </div>
           <div className="flex-1 flex justify-center">

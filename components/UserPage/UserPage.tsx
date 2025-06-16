@@ -1,5 +1,5 @@
 "use client";
-import {  userSessions } from "@/lib/api";
+import { userSessions } from "@/lib/api";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,83 +14,58 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import { useQuery } from "@tanstack/react-query";
 import { UserStore } from "@/store/UserStore";
-
-const mockSessions = [
-  {
-    id: 1,
-    device: "Chrome on Windows",
-    ip: "192.168.1.1",
-    lastActive: "2025-06-11T15:30:00",
-  },
-  {
-    id: 2,
-    device: "Safari on iPhone",
-    ip: "192.168.1.2",
-    lastActive: "2025-06-10T09:15:00",
-  },
-];
-
-const mockPreviousLogins = [
-  {
-    id: 1,
-    date: "2025-06-09T14:22:00",
-    device: "Chrome on Windows",
-    ip: "192.168.1.1",
-    status: "Success",
-  },
-  {
-    id: 2,
-    date: "2025-06-08T10:45:00",
-    device: "Safari on iPhone",
-    ip: "192.168.1.2",
-    status: "Success",
-  },
-  {
-    id: 3,
-    date: "2025-06-07T18:30:00",
-    device: "Firefox on Mac",
-    ip: "192.168.1.3",
-    status: "Success",
-  },
-];
+import PreviousUserSessions from "./PreviousUserSessions";
+import { logout } from "@/lib/api";
 
 type DetailType = "sessions" | "logins" | null;
 
 export default function UserPage() {
   const { user, setUser } = UserStore();
   console.log(user);
-  
+
   const [activeDetail, setActiveDetail] = useState<DetailType>(null);
   const router = useRouter();
 
-  // Mock user data - in a real app, this would come from your auth system
-
-  const handleLogout = () => {
-    // In a real app, you would handle logout logic here
+  const handleLogout = async () => {
+    await logout();
     router.push("/");
   };
 
   const getUserData = async () => {
     try {
       const response = await userSessions();
+      console.log(response);
+
+      return response;
     } catch (error) {
       console.log(error);
     }
   };
 
-  const { data, error } = useQuery({
+  const { data, error, isLoading, isError } = useQuery({
     queryKey: ["user"],
     staleTime: Infinity,
     queryFn: getUserData,
   });
+
+  if (isLoading) {
+    return <div>Loading.....</div>;
+  }
+
+  if (isError) {
+    console.log(error);
+    return <div>Error occurred</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="container mx-auto max-w-6xl">
         <Card className="mb-4">
           <CardHeader>
-            <CardTitle className="text-2xl">Welcome, {user?.email}</CardTitle>
-            <CardDescription>{user?.email}</CardDescription>
+            <CardTitle className="text-2xl">
+              Welcome, {data?.data.foundUser.email}
+            </CardTitle>
+            <CardDescription>ID: {data?.data.foundUser.userId}</CardDescription>
           </CardHeader>
         </Card>
 
@@ -104,13 +79,13 @@ export default function UserPage() {
             >
               User Sessions
             </Button>
-            <Button
+            {/* <Button
               variant={activeDetail === "logins" ? "default" : "outline"}
               className="w-full justify-start"
               onClick={() => setActiveDetail("logins")}
             >
               Previous Logins
-            </Button>
+            </Button> */}
             <Button
               variant="destructive"
               className="w-full justify-start"
@@ -123,37 +98,10 @@ export default function UserPage() {
           {/* Right content area */}
           <div className="md:col-span-2">
             {activeDetail === "sessions" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Active Sessions</CardTitle>
-                  <CardDescription>
-                    All devices currently logged into your account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {mockSessions.map((session) => (
-                      <div key={session.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="font-medium">{session.device}</p>
-                            <p className="text-sm text-gray-500">
-                              IP: {session.ip}
-                            </p>
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Last active:{" "}
-                            {new Date(session.lastActive).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <PreviousUserSessions userId={data?.data.foundUser.userId} />
             )}
 
-            {activeDetail === "logins" && (
+            {/* {activeDetail === "logins" && (
               <Card>
                 <CardHeader>
                   <CardTitle>Previous Logins</CardTitle>
@@ -184,7 +132,7 @@ export default function UserPage() {
                   </div>
                 </CardContent>
               </Card>
-            )}
+            )} */}
 
             {!activeDetail && (
               <div className="flex items-center justify-center h-full min-h-[200px] border rounded-lg bg-white">

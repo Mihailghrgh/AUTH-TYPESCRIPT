@@ -11,20 +11,17 @@ async function page() {
     const accessToken = data.get("accessToken");
     const refreshToken = data.get("refreshToken");
     console.log(refreshToken);
-    
-    if (!data) {
+
+    if (!accessToken) {
       console.log(refreshToken);
 
       const response = await refreshAuthToken();
-
-      // console.log(response);
     }
-    // const result = verifyAccessTokenSchema.parse(data?.value as string);
 
     return <UserPage />;
   } catch (error) {
     console.log(error);
-    // redirect("/");
+    redirect("/");
   }
 }
 export default page;
