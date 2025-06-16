@@ -7,7 +7,7 @@
     "strict": true,
     "outDir": "dist",
     "noEmit": false,
-    "module": "ESNext",
+    "module": "commonjs",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
