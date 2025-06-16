@@ -1,6 +1,7 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
+import { LockIcon } from "lucide-react";
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -36,7 +37,7 @@ export default function LandingPage() {
           </div>
           <div className="flex-1 flex justify-center">
             <img
-              src="/placeholder.svg?height=300&width=400"
+              src="/locking.jpg"
               alt="Authentication illustration"
               className="rounded-lg shadow-md"
               width={400}

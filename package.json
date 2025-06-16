@@ -8,8 +8,9 @@
   },
   "scripts": {
     "dev": "nodemon --exec tsx server.ts",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.ts",
+    "build": "next build && npm run build:server",
+    "build:server": "tsc server.ts --outDir dist",
+    "start": "NODE_ENV=production node dist/server.js",
     "lint": "next lint"
   },
   "dependencies": {
